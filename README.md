@@ -27,3 +27,10 @@ My role as data engineer is to create a cassandra database for this analysis. I'
 > You may have the following warning but that's okay.
 
 ![Built image](images/built_image.png)
+
+4. Create and run containers: `docker-compose up -d`
+5. Check containers are running: `docker-compose ps`
+6. check jupyterlab link (last line): `docker-compose logs jlab`
+7. Copy jupyterlab link and paste it in your browser.
+
+![Jupyter lab](images/jupyterlab.png)
