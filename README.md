@@ -15,3 +15,15 @@ My role as data engineer is to create a cassandra database for this analysis. I'
 ## Project structure
 
 ![Project structure](images/project_structure.png)
+
+## Quickstart
+
+**REQUIREMENT**: docker and docker-compose are already installed.
+
+1. Clone this repository: `https://github.com/mdifils/Data-Modeling-Cassandra.git`
+2. Change directory: `cd Data-Modeling-Cassandra`
+3. Build image: `docker-compose build --no-cache`
+
+> You may have the following warning but that's okay.
+
+![Built image](images/built_image.png)
