@@ -110,7 +110,7 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
     # pandas type 'object' means the column values are strings
     # NaN (not a number or null value) is a float (numpy.nan).
     # So when inserting values into tables Cassandra will complain
-    # for not being able to cast NaN as text
+    # for not being able to convert NaN as text
 
     # Get the list of dataframe columns
     cols = df.columns
@@ -132,6 +132,10 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
 df = files_to_dataframe('/event_data')
 df = transform(df)
 
+# I could convert this dataframe into
+# --------df.to_csv('event_data_new.csv', index=False, encoding='utf-8')--------
+# but I won't use it because I prefer to work with dataframe only
+
 ################### CREATING TABLES BASED ON QUERIES ##########################
 
 print("\ncreating table1")
@@ -142,6 +146,8 @@ select_query1 = """
     FROM table1
     WHERE session_id = 338 AND item_in_session = 4
 """
+
+# The WHERE clause gives us our composite key
 
 create_query1 = """
     CREATE TABLE IF NOT EXISTS table1(
@@ -165,6 +171,9 @@ select_query2 = """
     FROM table2
     WHERE user_id = 10 AND session_id = 182
 """
+
+# The WHERE clause gives us our composite key
+# Then adding one more clustering column
 
 create_query2 = """
     CREATE TABLE IF NOT EXISTS table2(
@@ -191,6 +200,9 @@ select_query3 = """
     WHERE song = 'All Hands Against His Own'
 """
 
+# The WHERE clause gives us our partition key
+# Then adding user_id as clustering column to make the key unique
+
 create_query3 = """
     CREATE TABLE IF NOT EXISTS table3(
         song text, 
@@ -215,16 +227,15 @@ insert_query1 = """
     VALUES (%s, %s, %s, %s, %s)
 """
 
+# Iteracting over each row of the dataframe
 for i, row in df.iterrows():
+    # for each row, just take interested valuess
     data = (row.session_id, row.item_in_session,
             row.artist, row.song, row.length)
     session.execute(insert_query1, data)
-    # try:
-    # except Exception as e:
-    #     print(e)
 
 print("inserting table2")
-# ------------------------------TABLE 2 ---------------------------------------
+# ------------------------------TABLE 2 --------------------------------------
 
 insert_query2 = """
     INSERT INTO table2
@@ -237,9 +248,6 @@ for i, row in df.iterrows():
     data = (row.user_id, row.session_id, row.item_in_session,
             row.artist, row.song, row.first_name, row.last_name)
     session.execute(insert_query2, data)
-    # try:
-    # except Exception as e:
-    #     print(e)
 
 print("inserting table3")
 # --------------------------------- TABLE 3------------------------------------
@@ -255,9 +263,6 @@ df_query3 = df[df['song'] != '']
 for i, row in df_query3.iterrows():
     data = (row.song, row.user_id, row.first_name, row.last_name)
     session.execute(insert_query3, data)
-    # try:
-    # except Exception as e:
-    #     print(e)
 
 ############################ TESTING QUERIES ##################################
 
