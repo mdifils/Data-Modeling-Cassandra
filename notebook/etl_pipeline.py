@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from cassandra.cluster import Cluster
 
-######################### CONNECTION TO APACHE CASSANDRA #######################
+######################### CONNECTION TO APACHE CASSANDRA ######################
 # Remember that cassandra service in docker-compose.yml file
 # was defined as 'cassandra_node'
 
@@ -13,7 +13,7 @@ cluster = Cluster(['cassandra_node'])
 # Setting a session to be able to execute queries
 session = cluster.connect()
 
-# --------Dropping tables if keyspace exists or creating a new keyspace----------
+# --------Dropping tables if keyspace exists or creating a new keyspace--------
 
 # If keyspace exists drop tables
 try:
@@ -23,7 +23,7 @@ try:
         session.execute(query)
         print(f"Dropping {tab} ...")
 
-# I keyspace doesn't exists, create a new one
+# If keyspace doesn't exists, create a new one
 except:
     # creating a new keyspace
     session.execute("""
@@ -37,7 +37,7 @@ except:
     # setting the new created keyspace
     session.set_keyspace('sparkify_ks')
 
-######################## LOADING DATA INTO DATAFRAME ###########################
+######################## LOADING DATA INTO DATAFRAME ##########################
 
 
 def files_to_dataframe(dataset_folder: str) -> pd.DataFrame:
@@ -132,10 +132,10 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
 df = files_to_dataframe('/event_data')
 df = transform(df)
 
-################### CREATING TABLES BASED ON QUERIES ###########################
+################### CREATING TABLES BASED ON QUERIES ##########################
 
 print("\ncreating table1")
-# -------------------TABLE 1-----------------------------------------------------
+# -------------------TABLE 1---------------------------------------------------
 
 select_query1 = """
     SELECT artist, song, length 
@@ -158,7 +158,7 @@ except Exception as e:
     print(e)
 
 print("creating table2")
-# ------------------------TABLE 2-----------------------------------------------
+# ------------------------TABLE 2----------------------------------------------
 
 select_query2 = """
     SELECT artist, song, first_name, last_name 
@@ -183,7 +183,7 @@ except Exception as e:
     print(e)
 
 print("creating table3")
-# -----------------------------TABLE 3 ------------------------------------------
+# -----------------------------TABLE 3 ----------------------------------------
 
 select_query3 = """
     SELECT first_name, last_name 
@@ -204,10 +204,10 @@ try:
 except Exception as e:
     print(e)
 
-##########################INSERTING DATA INTO TABLES ###########################
+##########################INSERTING DATA INTO TABLES ##########################
 
 print("\ninserting table1")
-# ---------------------------- TABLE 1-------------------------------------------
+# ---------------------------- TABLE 1-----------------------------------------
 
 insert_query1 = """
     INSERT INTO table1
@@ -224,7 +224,7 @@ for i, row in df.iterrows():
     #     print(e)
 
 print("inserting table2")
-# ------------------------------TABLE 2 -----------------------------------------
+# ------------------------------TABLE 2 ---------------------------------------
 
 insert_query2 = """
     INSERT INTO table2
@@ -242,7 +242,7 @@ for i, row in df.iterrows():
     #     print(e)
 
 print("inserting table3")
-# --------------------------------- TABLE 3--------------------------------------
+# --------------------------------- TABLE 3------------------------------------
 
 insert_query3 = """
     INSERT INTO table3(song, user_id, first_name, last_name)
@@ -259,10 +259,10 @@ for i, row in df_query3.iterrows():
     # except Exception as e:
     #     print(e)
 
-############################ TESTING QUERIES ###################################
+############################ TESTING QUERIES ##################################
 
 print("\ntesting table1\n")
-# -----------------------------TABLE 1 ------------------------------------------
+# -----------------------------TABLE 1 ----------------------------------------
 
 try:
     rows = session.execute(select_query1)
@@ -278,7 +278,7 @@ for row in rows:
     print(f"{row.artist:<20} {row.song:<55} {row.length}")
 
 print("\ntesting table2\n")
-# ----------------------------------TABLE 2--------------------------------------
+# ----------------------------------TABLE 2------------------------------------
 
 try:
     rows = session.execute(select_query2)
@@ -296,7 +296,7 @@ for row in rows:
     {row.last_name}")
 
 print("\ntesting table3\n")
-# --------------------------------TABLE 3---------------------------------------
+# --------------------------------TABLE 3--------------------------------------
 
 try:
     rows = session.execute(select_query3)
@@ -311,7 +311,7 @@ print(f"{'FIRSTNAME' :<12}  LASTNAME\n")
 for row in rows:
     print(f"{row.first_name:<12} {row.last_name}")
 
-###########DROP TABLES CLOSING CONNECTION ######################################
+###########DROP TABLES CLOSING CONNECTION #####################################
 
 print("\n")
 # -----------------DROPPING TABLES-------------------------
