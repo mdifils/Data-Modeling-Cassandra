@@ -18,7 +18,7 @@ session = cluster.connect()
 # If keyspace exists drop tables
 try:
     session.set_keyspace('sparkify_ks')
-    for tab in ['table1', 'table2', 'table3']:
+    for tab in ['length_playlist_session', 'user_playlist_session', 'song_user']:
         query = f"DROP TABLE IF EXISTS sparkify.{tab}"
         session.execute(query)
         print(f"Dropping {tab} ...")
@@ -132,25 +132,27 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
 df = files_to_dataframe('/event_data')
 df = transform(df)
 
-# I could convert this dataframe into
-# --------df.to_csv('event_data_new.csv', index=False, encoding='utf-8')--------
+# I could convert this dataframe into CSV
+# --df.to_csv('event_data_new.csv', index=False, encoding='utf-8')---
 # but I won't use it because I prefer to work with dataframe only
 
-################### CREATING TABLES BASED ON QUERIES ##########################
+################### PROCESSING FIRST QUERY ##########################
 
-print("\ncreating table1")
-# -------------------TABLE 1---------------------------------------------------
+print("\nPROCESSING FIRST QUERY\n")
+print("CREATING length_playlist_session table")
+
+# -------------------CREATING TABLE----------------------------------
 
 select_query1 = """
     SELECT artist, song, length 
-    FROM table1
+    FROM length_playlist_session
     WHERE session_id = 338 AND item_in_session = 4
 """
 
-# The WHERE clause gives us our composite key
+# The WHERE clause gives us the table composite key
 
 create_query1 = """
-    CREATE TABLE IF NOT EXISTS table1(
+    CREATE TABLE IF NOT EXISTS length_playlist_session(
         session_id int, 
         item_in_session int, 
         artist text, 
@@ -163,66 +165,12 @@ try:
 except Exception as e:
     print(e)
 
-print("creating table2")
-# ------------------------TABLE 2----------------------------------------------
+print("INSERTING INTO length_playlist_session")
 
-select_query2 = """
-    SELECT artist, song, first_name, last_name 
-    FROM table2
-    WHERE user_id = 10 AND session_id = 182
-"""
-
-# The WHERE clause gives us our composite key
-# Then adding one more clustering column
-
-create_query2 = """
-    CREATE TABLE IF NOT EXISTS table2(
-        user_id float, 
-        session_id int, 
-        item_in_session int,
-        artist text, 
-        song text, 
-        first_name text, 
-        last_name text,
-        PRIMARY KEY(user_id, session_id, item_in_session)
-    )"""
-try:
-    session.execute(create_query2)
-except Exception as e:
-    print(e)
-
-print("creating table3")
-# -----------------------------TABLE 3 ----------------------------------------
-
-select_query3 = """
-    SELECT first_name, last_name 
-    FROM table3
-    WHERE song = 'All Hands Against His Own'
-"""
-
-# The WHERE clause gives us our partition key
-# Then adding user_id as clustering column to make the key unique
-
-create_query3 = """
-    CREATE TABLE IF NOT EXISTS table3(
-        song text, 
-        user_id float, 
-        first_name text,
-        last_name text, 
-        PRIMARY KEY(song, user_id)
-    )"""
-try:
-    session.execute(create_query3)
-except Exception as e:
-    print(e)
-
-##########################INSERTING DATA INTO TABLES ##########################
-
-print("\ninserting table1")
-# ---------------------------- TABLE 1-----------------------------------------
+# ------------------------INSERTING INTO TABLE-------------------------
 
 insert_query1 = """
-    INSERT INTO table1
+    INSERT INTO length_playlist_session
     (session_id, item_in_session, artist, song, length)
     VALUES (%s, %s, %s, %s, %s)
 """
@@ -234,11 +182,65 @@ for i, row in df.iterrows():
             row.artist, row.song, row.length)
     session.execute(insert_query1, data)
 
-print("inserting table2")
-# ------------------------------TABLE 2 --------------------------------------
+print("TESTING FIRST QUERY\n")
+
+# -----------------------TESTING-------------------------------------
+
+try:
+    rows = session.execute(select_query1)
+except Exception as e:
+    print(e)
+
+print("""QUERY 1:\n
+    Give me the artist, song title and song's length in the music app 
+    history that was heard during sessionId = 338, and itemInSession = 4
+\n""")
+
+print(f"{'ARTIST' :<20}  {'SONG':<55} LENGTH\n")
+
+for row in rows:
+    print(f"{row.artist:<20} {row.song:<55} {row.length}")
+
+##########################PROCESSING SECOND QUERY ##########################
+
+print("\nPROCESSING SECOND QUERY\n")
+print("CREATING user_playlist_session table")
+
+# ----------------------CREATING TABLE-------------------------------------
+
+select_query2 = """
+    SELECT artist, song, first_name, last_name 
+    FROM user_playlist_session
+    WHERE user_id = 10 AND session_id = 182
+"""
+
+# The WHERE clause gives us the table composite partition key
+# (user_id,session_id) Then adding one more clustering column item_in_session
+# for sorting reason
+
+create_query2 = """
+    CREATE TABLE IF NOT EXISTS user_playlist_session(
+        user_id float, 
+        session_id int, 
+        item_in_session int,
+        artist text, 
+        song text, 
+        first_name text, 
+        last_name text,
+        PRIMARY KEY((user_id, session_id), item_in_session)
+    )"""
+try:
+    session.execute(create_query2)
+except Exception as e:
+    print(e)
+
+
+print("INSERTING INTO user_playlist_session")
+
+# ------------------INSERTING INTO TABLE--------------------------------------
 
 insert_query2 = """
-    INSERT INTO table2
+    INSERT INTO user_playlist_session
     (user_id, session_id, item_in_session,
     artist, song, first_name, last_name)
     VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -249,11 +251,63 @@ for i, row in df.iterrows():
             row.artist, row.song, row.first_name, row.last_name)
     session.execute(insert_query2, data)
 
-print("inserting table3")
-# --------------------------------- TABLE 3------------------------------------
+print("TESTING SECOND QUERY\n")
+
+# -----------------------TESTING--------------------------------
+
+try:
+    rows = session.execute(select_query2)
+except Exception as e:
+    print(e)
+
+print("""QUERY 2:\n
+    Give me only the following: name of artist, song
+    (sorted by itemInSession) and user (first and last name)
+    for userid = 10, sessionid = 182
+\n""")
+
+print(f"{'ARTIST':<20}  {'SONG':<55} {'FIRSTNAME' :<10} LASTNAME\n")
+
+for row in rows:
+    print(f"{row.artist:<20} {row.song:<55} {row.first_name:<10} \
+    {row.last_name}")
+
+
+############################ PROCESSING THIRD QUERY ##########################
+
+print("\nPROCESSING THIRD QUERY\n")
+print("CREATING song_user table")
+
+# ---------------------CREATING TABLE--------------------------------
+
+select_query3 = """
+    SELECT first_name, last_name 
+    FROM song_user
+    WHERE song = 'All Hands Against His Own'
+"""
+
+# The WHERE clause gives us our partition key
+# Then adding user_id as clustering column to make the key unique
+
+create_query3 = """
+    CREATE TABLE IF NOT EXISTS song_user(
+        song text, 
+        user_id float, 
+        first_name text,
+        last_name text, 
+        PRIMARY KEY(song, user_id)
+    )"""
+try:
+    session.execute(create_query3)
+except Exception as e:
+    print(e)
+
+print("INSERTING INTO song_user")
+
+# --------------INSERTING INTO TABLE--------------------------------
 
 insert_query3 = """
-    INSERT INTO table3(song, user_id, first_name, last_name)
+    INSERT INTO song_user(song, user_id, first_name, last_name)
     VALUES (%s, %s, %s, %s)
 """
 
@@ -264,52 +318,20 @@ for i, row in df_query3.iterrows():
     data = (row.song, row.user_id, row.first_name, row.last_name)
     session.execute(insert_query3, data)
 
-############################ TESTING QUERIES ##################################
 
-print("\ntesting table1\n")
-# -----------------------------TABLE 1 ----------------------------------------
+print("TESTING THIRD QUERY\n")
 
-try:
-    rows = session.execute(select_query1)
-except Exception as e:
-    print(e)
-
-print("QUERY1:\nGive me the artist, song title and song's length in the music \
-    app history that was heard during sessionId = 338, and itemInSession = 4\n")
-
-print(f"{'ARTIST' :<20}  {'SONG':<55} LENGTH\n")
-
-for row in rows:
-    print(f"{row.artist:<20} {row.song:<55} {row.length}")
-
-print("\ntesting table2\n")
-# ----------------------------------TABLE 2------------------------------------
-
-try:
-    rows = session.execute(select_query2)
-except Exception as e:
-    print(e)
-
-print("QUERY2:\nGive me only the following: name of artist, song \
-        (sorted by itemInSession) and user (first and last name) \
-         for userid = 10, sessionid = 182\n")
-
-print(f"{'ARTIST':<20}  {'SONG':<55} {'FIRSTNAME' :<10} LASTNAME\n")
-
-for row in rows:
-    print(f"{row.artist:<20} {row.song:<55} {row.first_name:<10} \
-    {row.last_name}")
-
-print("\ntesting table3\n")
-# --------------------------------TABLE 3--------------------------------------
+# ------------------------------TESTING-------------------------------------
 
 try:
     rows = session.execute(select_query3)
 except Exception as e:
     print(e)
 
-print("QUERY3:\nGive me every user name (first and last) in my music app \
-history who listened to the song 'All Hands Against His Own'\n")
+print("""QUERY 3:\n
+    Give me every user name (first and last) in my music app
+    history who listened to the song 'All Hands Against His Own'
+\n""")
 
 print(f"{'FIRSTNAME' :<12}  LASTNAME\n")
 
@@ -322,7 +344,7 @@ print("\n")
 # -----------------DROPPING TABLES-------------------------
 
 try:
-    for tab in ['table1', 'table2', 'table3']:
+    for tab in ['length_playlist_session', 'user_playlist_session', 'song_user']:
         query = f"DROP TABLE IF EXISTS sparkify.{tab}"
         session.execute(query)
         print(f"Dropping {tab} ...")
@@ -333,9 +355,9 @@ except:
 
 try:
     r = session.execute("DROP KEYSPACE IF EXISTS sparkify_ks")
-    print("KEYSPACE sparkify_ks dropped")
+    print("\nKEYSPACE sparkify_ks dropped\n")
 except:
-    print("KEYSPACE sparkify_ks not dropped")
+    print("\nKEYSPACE sparkify_ks not dropped\n")
 
 # ------------------------------CLOSING CONNECTION---------------------
 
