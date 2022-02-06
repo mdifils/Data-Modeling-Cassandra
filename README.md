@@ -25,14 +25,15 @@ from a set of CSV files within a directory into apache cassandra tables.
 
 ![Project structure](images/project_structure.png)
 
-|       File/Folder       |                  Description                  |
-| :---------------------: | :-------------------------------------------: |
-| Data-Modeling-Cassandra |               working directory               |
-|       Dockerfile        |            Define jupyterlab image            |
-|   docker-compose.yml    | Put together jupyterlab et cassandra services |
-|    requirements.txt     |               required packages               |
-|      etl_pipeline       |         ETL pipeline for the project          |
-|       event_data        |                   CSV files                   |
+|       File/Folder       |                   Description                   |
+| :---------------------: | :---------------------------------------------: |
+| Data-Modeling-Cassandra |                working directory                |
+|       Dockerfile        |             Define jupyterlab image             |
+|   docker-compose.yml    |  Put together jupyterlab et cassandra services  |
+|    requirements.txt     |                required packages                |
+|     etl_pipeline.py     | Python script with ETL pipeline for the project |
+|   etl_pipeline.ipynb    | notebook with same ETL pipeline for the project |
+|       event_data        |                    CSV files                    |
 
 ## Terminology
 
