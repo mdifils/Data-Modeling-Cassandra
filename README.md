@@ -1,7 +1,6 @@
 # Data Modeling with Cassandra
 
-This project is part of [Udacity Data Engineer nanodegree program]
-(https://www.udacity.com/course/data-engineer-nanodegree--nd027)
+This project is part of [Udacity Data Engineer nanodegree program](https://www.udacity.com/course/data-engineer-nanodegree--nd027)
 
 ## Overview
 
